@@ -1,9 +1,0 @@
-Flask
-flask-cors
-torch
-diffusers
-transformers
-Pillow
-gunicorn
-sqlite3
-torch==2.1.0+cu118  # Adjust based on CUDA version
