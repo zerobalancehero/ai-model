@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>AI Image Gallery</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #f9f9fb;
+        --fg: #1f1f1f;
+        --card: #ffffffcc;
+        --sidebar: #dbd8d8b0;
+        --border: #e1e1e1;
+        --accent: #005eff;
+        --accent-soft: #b2d4ff;
+      }
+
+      body.dark {
+        --bg: #1e1e2a;
+        --fg: #f5f5f5;
+        --card: #2a2a3a;
+        --sidebar: #121221;
+        --border: #333;
+        --accent: #4db3ff;
+        --accent-soft: #4db3ff55;
+      }
+
+      html,
+      body {
+        height: 100vh;
+        min-height: 100vh;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: var(--bg);
+        color: var(--fg);
+        font-family: "Inter", system-ui, sans-serif;
+        transition: background 0.3s ease, color 0.3s ease;
+        height: 100vh;
+        min-height: 100vh;
+        box-sizing: border-box;
+      }
+
+      h1 {
+        text-align: center;
+        font-weight: 600;
+        margin: 2rem auto 1rem;
+        font-size: 2rem;
+      }
+
+      .menu-container {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        z-index: 20;
+      }
+      .menu-icon {
+        width: 38px;
+        height: 38px;
+        background: var(--accent);
+        border: none;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: background 0.2s;
+      }
+      .menu-icon:hover {
+        background: #003ea8;
+      }
+      .menu-icon span {
+        display: block;
+        width: 22px;
+        height: 3px;
+        background: #fff;
+        margin: 3px 0;
+        border-radius: 2px;
+        transition: 0.2s;
+      }
+      .dropdown-menu {
+        display: none;
+        position: absolute;
+        top: 48px;
+        right: 0;
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+        min-width: 180px;
+        padding: 0.5rem 0;
+        z-index: 100;
+      }
+      .dropdown-menu.show {
+        display: block;
+      }
+      .dropdown-menu button,
+      .dropdown-menu a {
+        width: 100%;
+        background: none;
+        border: none;
+        color: var(--fg);
+        padding: 12px 20px;
+        text-align: left;
+        font-size: 1rem;
+        cursor: pointer;
+        transition: background 0.18s;
+        border-radius: 0;
+        outline: none;
+        font-family: inherit;
+      }
+      .dropdown-menu button:hover,
+      .dropdown-menu a:hover {
+        background: var(--accent-soft);
+        color: var(--accent);
+      }
+
+      body.dark .dropdown-menu button:hover,
+      body.dark .dropdown-menu a:hover {
+        background: rgba(255, 255, 255, 0.1);
+        color: var(--accent);
+      }
+
+      .container {
+        max-width: 960px;
+        margin: 0 auto;
+        padding: 1rem 1.5rem 0 1.5rem;
+        padding-bottom: 90px; 
+        box-sizing: border-box;
+      }
+
+      #input-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0; 
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        position: fixed;
+        left: 0;
+        bottom: 0;
+        width: 100vw;
+        background: var(--bg);
+        padding: 1rem 0.5rem;
+        z-index: 20;
+        border-top: 1px solid var(--border);
+      }
+
+      .input-icon {
+        display: flex;
+        align-items: center;
+        height: 100%;
+      }
+
+      input[type="text"] {
+        padding: 0.75rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--accent);
+        background: transparent;
+        color: var(--fg);
+        min-width: 240px;
+        font-size: 1rem;
+        position: static;
+      }
+
+      input[type="text"]:focus {
+        outline: none;
+        box-shadow: 0 0 0 2px var(--accent-soft);
+      }
+
+      button.generate {
+        padding: 0.75rem 1.25rem;
+        border-radius: 999px;
+        border: none;
+        background: var(--accent);
+        color: white;
+        font-weight: 600;
+        font-size: 1rem;
+        cursor: pointer;
+        position: static;
+      }
+
+     
+      .gallery {
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+        width: 100%;
+        min-height: 60vh;
+        padding: 2rem 0;
+      }
+
+      .card {
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 1rem;
+        padding-top: 50px;
+        width: auto; 
+        max-width: 100%; 
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        transition: transform 0.25s ease;
+      }
+
+      .card img {
+        width: auto;
+        max-width: 100%;
+        height: auto;
+        display: block;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: box-shadow 0.3s cubic-bezier(0.4, 2, 0.6, 1), transform 0.2s;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+      }
+
+      .card img:hover {
+        box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.25),
+          0 1.5px 6px 0 rgba(0, 0, 0, 0.1);
+        transform: translateY(-4px) scale(1.03);
+      }
+
+      body.dark .card img:hover {
+        box-shadow: 0 8px 32px 0 rgba(255, 255, 255, 0.18),
+          0 1.5px 6px 0 rgba(255, 255, 255, 0.1);
+      }
+
+      .card .actions {
+        margin-top: 0.75rem;
+        display: flex;
+        gap: 0.5rem;
+      }
+
+      .card .actions a,
+      .card .actions button {
+        padding: 6px 12px;
+        font-size: 0.85rem;
+        border: none;
+        border-radius: 6px;
+        text-decoration: none;
+        cursor: pointer;
+      }
+
+      .card .actions a {
+        background: teal;
+        color: white;
+      }
+
+      .card .actions button {
+        background: crimson;
+        color: white;
+      }
+
+      .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        bottom: 0;
+        width: 220px;
+        padding: 1rem;
+        background: var(--sidebar);
+        overflow-y: auto;
+        border-right: 1px solid var(--border);
+      }
+      .sidebar h2 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: var(--accent);
+      }
+
+      .sidebar img {
+        width: 100%;
+        margin-bottom: 0.75rem;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #history-list li {
+        transition: box-shadow 0.3s cubic-bezier(0.4, 2, 0.6, 1), transform 0.2s;
+        box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
+        border-radius: 6px;
+        padding: 4px 6px;
+      }
+
+      #history-list li:hover {
+        box-shadow: 0 4px 16px 0 rgba(0, 0, 0, 0.18),
+          0 1.5px 6px 0 rgba(0, 0, 0, 0.1);
+        background: rgba(0, 0, 0, 0.03);
+        transform: translateY(-2px) scale(1.02);
+      }
+
+      body.dark #history-list li:hover {
+        box-shadow: 0 4px 16px 0 rgba(255, 255, 255, 0.18),
+          0 1.5px 6px 0 rgba(255, 255, 255, 0.1);
+        background: rgba(255, 255, 255, 0.04);
+      }
+
+      @media (max-width: 768px) {
+        .sidebar {
+          display: none;
+        }
+
+        body {
+          padding-left: 0;
+        }
+      }
+
+      .back-about {
+        position: fixed;
+        top: 20px;
+        left: 260px;
+        z-index: 15;
+        background: var(--accent);
+        color: #fff;
+        border: none;
+        border-radius: 999px;
+        padding: 8px 18px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: background 0.2s, transform 0.2s;
+      }
+      .back-about:hover {
+        background: #003ea8;
+        transform: scale(1.04);
+      }
+      @media (max-width: 768px) {
+        .back-about {
+          left: 20px;
+          top: 70px;
+          font-size: 0.95rem;
+          padding: 7px 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="menu-container">
+      <button class="menu-icon" id="menuBtn" aria-label="Menu">
+        <span></span>
+        <span></span>
+        <span></span>
+      </button>
+      <div class="dropdown-menu" id="dropdownMenu">
+        <button onclick="toggleTheme()">Toggle Theme</button>
+        <button id="delete-main-image-btn" style="color: crimson">
+          Delete Current Image
+        </button>
+      </div>
+    </div>
+
+    <button class="back-about" onclick="window.location.href='about'">
+      Back to Main Page
+    </button>
+
+    <div class="sidebar">
+      <h2>Image History</h2>
+      <hr />
+      <ul id="history-list" style="padding-left: 0; list-style: none"></ul>
+    </div>
+
+    <div class="container">
+      <h1>AI Image Generator</h1>
+
+      <div id="input-container">
+        <input type="text" id="prompt" placeholder="Enter a prompt..." />
+        <button class="generate" onclick="generateImage()">Generate</button>
+      </div>
+
+      <div class="gallery" id="image-gallery">
+        <img id="main-image" src="..." alt="Generated Image" />
+      </div>
+    </div>
+
+    <script>
+      const API = "http://localhost:5000";
+
+      function generateImage() {
+        const prompt = document.getElementById("prompt").value.trim();
+        if (!prompt) return alert("Please enter a prompt");
+
+       
+        fetch("/generate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        })
+          .then((res) => res.json())
+          .then((data) => {
+            if (data.url) {
+              
+              document.getElementById("main-image").src = data.url;
+
+             
+              document.getElementById("prompt").value = "";
+
+              fetch("/images")
+                .then((res) => res.json())
+                .then((images) => {
+                  updateImageHistory(images);
+                });
+            } else {
+              alert(data.error || "Image generation failed.");
+            }
+          })
+          .catch((err) => console.error("Error generating image:", err));
+      }
+
+      function loadImages() {
+        fetch(`${API}/images`)
+          .then((res) => res.json())
+          .then((images) => {
+            const gallery = document.getElementById("image-gallery");
+            const historyList = document.getElementById("history-list");
+            gallery.innerHTML = "";
+            historyList.innerHTML = "";
+
+            if (images.length > 0) {
+              const img = images[images.length - 1];
+              const card = document.createElement("div");
+              card.className = "card";
+              const image = document.createElement("img");
+              image.src = `${API}/static/images/${img.filename}`;
+              image.alt = img.prompt;
+              image.onclick = () => window.open(image.src, "_blank");
+              card.appendChild(image);
+
+              const actions = document.createElement("div");
+              actions.className = "actions";
+
+              const download = document.createElement("a");
+              download.href = `${API}/download/${img.filename}`;
+              download.textContent = "Download";
+              download.style.background = "teal";
+              download.style.color = "white";
+              download.style.padding = "6px 12px";
+              download.style.borderRadius = "6px";
+              download.style.fontSize = "0.85rem";
+              download.style.textDecoration = "none";
+              download.style.marginRight = "8px";
+
+              const share = document.createElement("button");
+              share.textContent = "Share";
+              share.style.background = "#3b82f6";
+              share.style.color = "white";
+              share.style.padding = "6px 12px";
+              share.style.borderRadius = "6px";
+              share.style.fontSize = "0.85rem";
+              share.style.border = "none";
+              share.style.cursor = "pointer";
+
+              share.onclick = function () {
+                const imageUrl = `${API}/static/images/${img.filename}`;
+                if (navigator.share) {
+                  navigator
+                    .share({
+                      title: "Check out this AI generated image!",
+                      url: imageUrl,
+                    })
+                    .catch(() => {});
+                } else {
+                  navigator.clipboard.writeText(imageUrl);
+                  share.textContent = "Copied!";
+                  setTimeout(() => (share.textContent = "Share"), 1200);
+                }
+              };
+
+              actions.appendChild(download);
+              actions.appendChild(share);
+              card.appendChild(actions);
+
+              const copyBtn = document.createElement("button");
+              copyBtn.textContent = "Copy";
+              copyBtn.style.position = "absolute";
+              copyBtn.style.top = "12px";
+              copyBtn.style.right = "12px";
+              copyBtn.style.background = "#bbb";
+              copyBtn.style.color = "#fff";
+              copyBtn.style.opacity = "0.85";
+              copyBtn.style.border = "none";
+              copyBtn.style.borderRadius = "6px";
+              copyBtn.style.padding = "6px 14px";
+              copyBtn.style.fontSize = "0.85rem";
+              copyBtn.style.cursor = "pointer";
+              copyBtn.disabled = false;
+
+              // Copy image logic
+              copyBtn.onclick = async function () {
+                try {
+                  // Fetch the image as a blob
+                  const response = await fetch(image.src);
+                  const blob = await response.blob();
+                  // Copy to clipboard using Clipboard API
+                  await navigator.clipboard.write([
+                    new ClipboardItem({ [blob.type]: blob }),
+                  ]);
+                  copyBtn.textContent = "Copied!";
+                  setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+                } catch (err) {
+                  copyBtn.textContent = "Failed";
+                  setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+                }
+              };
+
+              // Make card position:relative to position the button
+              card.style.position = "relative";
+              card.appendChild(copyBtn);
+
+              gallery.appendChild(card);
+            }
+
+            // Show all images in the sidebar as a list
+            images
+              .slice()
+              .reverse()
+              .forEach((img) => {
+                const li = document.createElement("li");
+                li.style.display = "flex";
+                li.style.alignItems = "center";
+                li.style.marginBottom = "0.75rem";
+                li.style.gap = "0.5rem";
+
+                const thumb = document.createElement("img");
+                thumb.src = `${API}/static/images/${img.filename}`;
+                thumb.alt = img.prompt;
+                thumb.style.width = "40px";
+                thumb.style.height = "40px";
+                thumb.style.objectFit = "cover";
+                thumb.style.borderRadius = "4px";
+                thumb.style.cursor = "pointer";
+
+                const promptText = document.createElement("span");
+                promptText.textContent = img.prompt;
+                promptText.style.flex = "1";
+                promptText.style.fontSize = "0.9rem";
+                promptText.style.overflow = "hidden";
+                promptText.style.textOverflow = "ellipsis";
+                promptText.style.whiteSpace = "nowrap";
+                promptText.title = img.prompt;
+
+                // When clicking the list item, show the image in the main dashboard
+                li.onclick = () => showMainImage(img);
+
+                li.appendChild(thumb);
+                li.appendChild(promptText);
+
+                historyList.appendChild(li);
+              });
+
+            // After rendering all images in the sidebar
+            // Add the Select button if not already present
+            let selectBtn = document.getElementById("bulk-select-btn");
+            if (!selectBtn) {
+              selectBtn = document.createElement("button");
+              selectBtn.id = "bulk-select-btn";
+              selectBtn.textContent = "Select";
+              selectBtn.style.display = "block";
+              selectBtn.style.margin = "24px auto 0 auto";
+              selectBtn.style.padding = "10px 28px";
+              selectBtn.style.background = "#3b82f6";
+              selectBtn.style.color = "#fff";
+              selectBtn.style.border = "none";
+              selectBtn.style.borderRadius = "8px";
+              selectBtn.style.fontWeight = "600";
+              selectBtn.style.fontSize = "1rem";
+              selectBtn.style.cursor = "pointer";
+              selectBtn.style.transition = "background 0.2s";
+              selectBtn.onmouseover = () =>
+                (selectBtn.style.background = "#2563eb");
+              selectBtn.onmouseout = () =>
+                (selectBtn.style.background = "#3b82f6");
+              historyList.parentElement.appendChild(selectBtn);
+            }
+
+            // Remove any previous bulk delete button
+            let bulkDeleteBtn = document.getElementById("bulk-delete-btn");
+            if (bulkDeleteBtn) bulkDeleteBtn.remove();
+
+            selectBtn.onclick = function () {
+              // Toggle select mode
+              const selecting = !historyList.classList.contains("selecting");
+              historyList.classList.toggle("selecting", selecting);
+              selectBtn.textContent = selecting ? "Cancel" : "Select";
+
+              // Add checkboxes to each li
+              historyList.querySelectorAll("li").forEach((li, idx) => {
+                let checkbox = li.querySelector(".bulk-checkbox");
+                if (selecting) {
+                  if (!checkbox) {
+                    checkbox = document.createElement("input");
+                    checkbox.type = "checkbox";
+                    checkbox.className = "bulk-checkbox";
+                    checkbox.style.marginRight = "8px";
+                    li.insertBefore(checkbox, li.firstChild);
+                  }
+                  checkbox.style.display = "inline-block";
+                } else if (checkbox) {
+                  checkbox.checked = false;
+                  checkbox.style.display = "none";
+                }
+              });
+
+              // Add or remove the bulk delete button
+              let bulkDeleteBtn = document.getElementById("bulk-delete-btn");
+              if (selecting) {
+                if (!bulkDeleteBtn) {
+                  bulkDeleteBtn = document.createElement("button");
+                  bulkDeleteBtn.id = "bulk-delete-btn";
+                  bulkDeleteBtn.textContent = "Delete Selected";
+                  bulkDeleteBtn.style.display = "block";
+                  bulkDeleteBtn.style.margin = "12px auto 0 auto";
+                  bulkDeleteBtn.style.padding = "8px 22px";
+                  bulkDeleteBtn.style.background = "crimson";
+                  bulkDeleteBtn.style.color = "#fff";
+                  bulkDeleteBtn.style.border = "none";
+                  bulkDeleteBtn.style.borderRadius = "8px";
+                  bulkDeleteBtn.style.fontWeight = "600";
+                  bulkDeleteBtn.style.fontSize = "1rem";
+                  bulkDeleteBtn.style.cursor = "pointer";
+                  bulkDeleteBtn.onclick = function () {
+                    // Collect selected images
+                    const selected = [];
+                    historyList.querySelectorAll("li").forEach((li, idx) => {
+                      const checkbox = li.querySelector(".bulk-checkbox");
+                      if (checkbox && checkbox.checked) {
+                        // Get filename from img src
+                        const imgElem = li.querySelector("img");
+                        if (imgElem) {
+                          const parts = imgElem.src.split("/");
+                          const filename = parts[parts.length - 1];
+                          selected.push(filename);
+                        }
+                      }
+                    });
+                    if (selected.length === 0) {
+                      alert("No images selected.");
+                      return;
+                    }
+                    if (
+                      confirm(`Delete ${selected.length} selected image(s)?`)
+                    ) {
+                      // Send delete requests for each selected image
+                      Promise.all(
+                        selected.map((filename) =>
+                          fetch(`${API}/delete`, {
+                            method: "POST",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({ filename }),
+                          })
+                        )
+                      )
+                        .then(() => loadImages())
+                        .catch((err) =>
+                          alert(
+                            "Error deleting images: " + (err.message || err)
+                          )
+                        );
+                    }
+                  };
+                  historyList.parentElement.appendChild(bulkDeleteBtn);
+                }
+              } else {
+                if (bulkDeleteBtn) bulkDeleteBtn.remove();
+              }
+            };
+          })
+          .catch((err) => console.error("Error loading images:", err));
+      }
+
+      function deleteImage(filename) {
+        fetch(`${API}/delete`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ filename }),
+        })
+          .then(() => loadImages())
+          .catch((err) => console.error("Error deleting image:", err));
+      }
+
+      function toggleTheme() {
+        document.body.classList.toggle("dark");
+        localStorage.setItem(
+          "theme",
+          document.body.classList.contains("dark") ? "dark" : "light"
+        );
+      }
+
+      (function () {
+        if (localStorage.getItem("theme") === "dark") {
+          document.body.classList.add("dark");
+        }
+        loadImages();
+      })();
+
+      // Menu toggle logic
+      const menuBtn = document.getElementById("menuBtn");
+      const dropdownMenu = document.getElementById("dropdownMenu");
+      menuBtn.onclick = function (e) {
+        e.stopPropagation();
+        dropdownMenu.classList.toggle("show");
+      };
+      // Hide menu when clicking outside
+      document.addEventListener("click", function () {
+        dropdownMenu.classList.remove("show");
+      });
+
+      // Delete current image logic
+      document.getElementById("delete-main-image-btn").onclick = function () {
+        // Find the current image filename from the main dashboard
+        const gallery = document.getElementById("image-gallery");
+        const img = gallery.querySelector("img");
+        if (img && img.src) {
+          // Extract filename from src (assuming /static/images/filename)
+          const parts = img.src.split("/");
+          const filename = parts[parts.length - 1];
+          if (filename && confirm("Delete the current image?")) {
+            deleteImage(filename);
+          }
+        }
+        dropdownMenu.classList.remove("show");
+      };
+
+      // Helper function to show the selected image in the main dashboard
+      function showMainImage(img) {
+        const gallery = document.getElementById("image-gallery");
+        gallery.innerHTML = "";
+
+        const card = document.createElement("div");
+        card.className = "card";
+        const image = document.createElement("img");
+        image.src = `${API}/static/images/${img.filename}`;
+        image.alt = img.prompt;
+        image.onclick = () => window.open(image.src, "_blank");
+        card.appendChild(image);
+
+        // Actions container
+        const actions = document.createElement("div");
+        actions.className = "actions";
+
+        // Download button
+        const download = document.createElement("a");
+        download.href = `${API}/download/${img.filename}`;
+        download.textContent = "Download";
+        download.style.background = "teal";
+        download.style.color = "white";
+        download.style.padding = "6px 12px";
+        download.style.borderRadius = "6px";
+        download.style.fontSize = "0.85rem";
+        download.style.textDecoration = "none";
+        download.style.marginRight = "8px";
+
+        // Share button
+        const share = document.createElement("button");
+        share.textContent = "Share";
+        share.style.background = "#3b82f6";
+        share.style.color = "white";
+        share.style.padding = "6px 12px";
+        share.style.borderRadius = "6px";
+        share.style.fontSize = "0.85rem";
+        share.style.border = "none";
+        share.style.cursor = "pointer";
+
+        // Share logic (uses Web Share API if available, else copies link)
+        share.onclick = function () {
+          const imageUrl = `${API}/static/images/${img.filename}`;
+          if (navigator.share) {
+            navigator
+              .share({
+                title: "Check out this AI generated image!",
+                url: imageUrl,
+              })
+              .catch(() => {});
+          } else {
+            navigator.clipboard.writeText(imageUrl);
+            share.textContent = "Copied!";
+            setTimeout(() => (share.textContent = "Share"), 1200);
+          }
+        };
+
+        actions.appendChild(download);
+        actions.appendChild(share);
+        card.appendChild(actions);
+
+        // Copy button (top right)
+        const copyBtn = document.createElement("button");
+        copyBtn.textContent = "Copy";
+        copyBtn.style.position = "absolute";
+        copyBtn.style.top = "12px";
+        copyBtn.style.right = "12px";
+        copyBtn.style.background = "#bbb";
+        copyBtn.style.color = "#fff";
+        copyBtn.style.opacity = "0.85";
+        copyBtn.style.border = "none";
+        copyBtn.style.borderRadius = "6px";
+        copyBtn.style.padding = "6px 14px";
+        copyBtn.style.fontSize = "0.85rem";
+        copyBtn.style.cursor = "pointer";
+        copyBtn.disabled = false;
+
+        // Copy image logic
+        copyBtn.onclick = async function () {
+          try {
+            // Fetch the image as a blob
+            const response = await fetch(image.src);
+            const blob = await response.blob();
+            // Copy to clipboard using Clipboard API
+            await navigator.clipboard.write([
+              new ClipboardItem({ [blob.type]: blob }),
+            ]);
+            copyBtn.textContent = "Copied!";
+            setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+          } catch (err) {
+            copyBtn.textContent = "Failed";
+            setTimeout(() => (copyBtn.textContent = "Copy"), 1200);
+          }
+        };
+
+        // Make card position:relative to position the button
+        card.style.position = "relative";
+        card.appendChild(copyBtn);
+
+        gallery.appendChild(card);
+      }
+    </script>
+  </body>
+</html>
